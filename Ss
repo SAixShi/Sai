@@ -1,0 +1,445 @@
+--[[
+    DarkMirrorClassicUI Library (Synix)
+    ====================================
+    Usage:
+        local Synix = loadstring(game:HttpGet("URL_TO_THIS_SCRIPT"))()
+        -- Example:
+        local myTab = Synix.createTab("MyTab")
+        Synix.createSidebarButton("My Tab", "MyTab")
+        Synix.createSection(myTab, "Section Title")
+        -- Add elements as desired
+
+    API:
+        Synix.createTab(name)
+        Synix.createSidebarButton(text, tabName)
+        Synix.createSection(tab, sectionTitle)
+        Synix.createRow(tab, label, element)
+        Synix.mainFrame -- main UI frame, for custom parenting/styling
+--]]
+
+return function()
+    --// Services
+    local Players = game:GetService("Players")
+    local TweenService = game:GetService("TweenService")
+    local UserInputService = game:GetService("UserInputService")
+    local LocalPlayer = Players.LocalPlayer
+    local playerGui = LocalPlayer:WaitForChild("PlayerGui")
+
+    --// Main ScreenGui
+    local screenGui = Instance.new("ScreenGui")
+    screenGui.Name = "DarkMirrorClassicUI"
+    screenGui.Parent = playerGui
+    screenGui.ResetOnSpawn = false
+
+    --// Show/Hide Button (draggable)
+    local showIcon = "rbxassetid://YOUR_SHOW_ICON_ID"
+    local hideIcon = "rbxassetid://YOUR_HIDE_ICON_ID"
+
+    local showHideBtn = Instance.new("ImageButton")
+    showHideBtn.Size = UDim2.new(0, 60, 0, 60)
+    showHideBtn.Position = UDim2.new(0, 24, 0.5, -30)
+    showHideBtn.AnchorPoint = Vector2.new(0, 0.5)
+    showHideBtn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    showHideBtn.Image = hideIcon
+    showHideBtn.Parent = screenGui
+    showHideBtn.ZIndex = 99
+
+    local showHideBtnStroke = Instance.new("UIStroke", showHideBtn)
+    showHideBtnStroke.Color = Color3.fromRGB(255, 0, 0)
+    showHideBtnStroke.Thickness = 2
+
+    --// Make Show/Hide Button draggable
+    do
+        local dragging, dragInput, dragStart, startPos
+        local function updateDrag(input)
+            local delta = input.Position - dragStart
+            showHideBtn.Position = UDim2.new(
+                startPos.X.Scale, startPos.X.Offset + delta.X,
+                startPos.Y.Scale, startPos.Y.Offset + delta.Y
+            )
+        end
+        showHideBtn.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                dragging = true
+                dragStart = input.Position
+                startPos = showHideBtn.Position
+                input.Changed:Connect(function()
+                    if input.UserInputState == Enum.UserInputState.End then
+                        dragging = false
+                    end
+                end)
+            end
+        end)
+        showHideBtn.InputChanged:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+                dragInput = input
+            end
+        end)
+        UserInputService.InputChanged:Connect(function(input)
+            if input == dragInput and dragging then
+                updateDrag(input)
+            end
+        end)
+    end
+
+    --// Main Frame
+    local mainFrame = Instance.new("Frame")
+    mainFrame.Size = UDim2.new(0, 480, 0, 320)
+    mainFrame.Position = UDim2.new(0.5, -240, 0.5, -160)
+    mainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+    mainFrame.BackgroundTransparency = 0.25
+    mainFrame.Parent = screenGui
+
+    local mainUIStroke = Instance.new("UIStroke", mainFrame)
+    mainUIStroke.Color = Color3.fromRGB(255, 0, 0)
+    mainUIStroke.Thickness = 3
+
+    --// Sidebar
+    local sidebar = Instance.new("ScrollingFrame")
+    sidebar.Size = UDim2.new(0, 154, 1, 0)
+    sidebar.CanvasSize = UDim2.new(0,0,0,0)
+    sidebar.ScrollBarThickness = 4
+    sidebar.BackgroundColor3 = Color3.fromRGB(24, 24, 24)
+    sidebar.BackgroundTransparency = 0.3
+    sidebar.Parent = mainFrame
+    sidebar.Active = true
+
+    local sidebarList = Instance.new("UIListLayout", sidebar)
+    sidebarList.SortOrder = Enum.SortOrder.LayoutOrder
+    sidebarList.Padding = UDim.new(0, 8)
+
+    --// Make main UI draggable only by sidebar
+    do
+        local dragging, dragInput, dragStart, startPos
+        local function updateDrag(input)
+            local delta = input.Position - dragStart
+            mainFrame.Position = UDim2.new(
+                startPos.X.Scale, startPos.X.Offset + delta.X,
+                startPos.Y.Scale, startPos.Y.Offset + delta.Y
+            )
+        end
+        sidebar.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                dragging = true
+                dragStart = input.Position
+                startPos = mainFrame.Position
+                input.Changed:Connect(function()
+                    if input.UserInputState == Enum.UserInputState.End then
+                        dragging = false
+                    end
+                end)
+            end
+        end)
+        sidebar.InputChanged:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+                dragInput = input
+            end
+        end)
+        UserInputService.InputChanged:Connect(function(input)
+            if input == dragInput and dragging then
+                updateDrag(input)
+            end
+        end)
+    end
+
+    --// Sidebar Title
+    local sidebarTitle = Instance.new("TextLabel")
+    sidebarTitle.Size = UDim2.new(1, -24, 0, 38)
+    sidebarTitle.Position = UDim2.new(0, 12, 0, 8)
+    sidebarTitle.BackgroundTransparency = 1
+    sidebarTitle.Text = "ClassicBruh"
+    sidebarTitle.Font = Enum.Font.GothamBold
+    sidebarTitle.TextSize = 24
+    sidebarTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+    sidebarTitle.TextXAlignment = Enum.TextXAlignment.Left
+    sidebarTitle.Parent = sidebar
+
+    --// Content Frame (tabs holder)
+    local content = Instance.new("Frame")
+    content.Size = UDim2.new(1, -166, 1, -20)
+    content.Position = UDim2.new(0, 154, 0, 10)
+    content.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+    content.BackgroundTransparency = 0.35
+    content.Parent = mainFrame
+
+    -- Tabs storage
+    local tabFrames = {}
+    local sidebarButtons = {}
+
+    --// Create Tab (scrollable content)
+    local function createTab(name)
+        local frame = Instance.new("ScrollingFrame")
+        frame.Size = UDim2.new(1, 0, 1, 0)
+        frame.BackgroundTransparency = 1
+        frame.Visible = false
+        frame.ScrollBarThickness = 6
+        frame.CanvasSize = UDim2.new(0,0,0,0)
+        frame.Parent = content
+
+        local layout = Instance.new("UIListLayout", frame)
+        layout.FillDirection = Enum.FillDirection.Vertical
+        layout.Padding = UDim.new(0, 8)
+        layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+        layout.VerticalAlignment = Enum.VerticalAlignment.Top
+
+        tabFrames[name] = frame
+        return frame
+    end
+
+    -- Sidebar buttons for tabs
+    local function createSidebarButton(text, tabName)
+        local btn = Instance.new("TextButton")
+        btn.Size = UDim2.new(1, -12, 0, 36)
+        btn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+        btn.Text = text
+        btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        btn.Font = Enum.Font.GothamMedium
+        btn.TextSize = 16
+        btn.TextXAlignment = Enum.TextXAlignment.Left
+        btn.Parent = sidebar
+
+        btn.MouseButton1Click:Connect(function()
+            for _, f in pairs(tabFrames) do f.Visible = false end
+            tabFrames[tabName].Visible = true
+            for _, b in pairs(sidebarButtons) do b.BackgroundColor3 = Color3.fromRGB(30, 30, 30) end
+            btn.BackgroundColor3 = Color3.fromRGB(60, 0, 0)
+        end)
+
+        table.insert(sidebarButtons, btn)
+    end
+
+    -- Row for features
+    local function createRow(tab, name, element)
+        local row = Instance.new("Frame")
+        row.Size = UDim2.new(0.9, 0, 0, 40)
+        row.BackgroundTransparency = 1
+        row.Parent = tab
+
+        local label = Instance.new("TextLabel")
+        label.Size = UDim2.new(0.6, 0, 1, 0)
+        label.BackgroundTransparency = 1
+        label.Text = name
+        label.Font = Enum.Font.GothamBold
+        label.TextSize = 14
+        label.TextColor3 = Color3.fromRGB(255,255,255)
+        label.TextXAlignment = Enum.TextXAlignment.Left
+        label.Parent = row
+
+        element.Parent = row
+        element.Position = UDim2.new(1, -element.Size.X.Offset, 0.5, -element.Size.Y.Offset/2)
+    end
+
+    -- Section heading
+    local function createSection(tab, sectionTitle)
+        local sectionLabel = Instance.new("TextLabel")
+        sectionLabel.Size = UDim2.new(0.9, 0, 0, 32)
+        sectionLabel.BackgroundTransparency = 1
+        sectionLabel.Text = sectionTitle
+        sectionLabel.Font = Enum.Font.GothamBold
+        sectionLabel.TextSize = 20
+        sectionLabel.TextColor3 = Color3.fromRGB(255, 50, 50)
+        sectionLabel.TextXAlignment = Enum.TextXAlignment.Left
+        sectionLabel.Parent = tab
+    end
+
+    -- Default Home & Settings Tabs
+    local homeTab = createTab("Home")
+    homeTab.Visible = true
+    local settingsTab = createTab("Settings")
+
+    createSidebarButton("Home", "Home")
+    createSidebarButton("Settings", "Settings")
+    sidebarButtons[1].BackgroundColor3 = Color3.fromRGB(60, 0, 0)
+
+    -- Example Section in Home tab
+    createSection(homeTab, "Main Features Section")
+
+    -- Example Feature: Toggle
+    local toggleSwitch = Instance.new("TextButton")
+    toggleSwitch.Size = UDim2.new(0, 40, 0, 18)
+    toggleSwitch.BackgroundColor3 = Color3.fromRGB(60,0,0)
+    toggleSwitch.Text = ""
+    toggleSwitch.AutoButtonColor = false
+    Instance.new("UICorner", toggleSwitch).CornerRadius = UDim.new(1,0)
+
+    local switchCircle = Instance.new("Frame")
+    switchCircle.Size = UDim2.new(0, 13, 1, -4)
+    switchCircle.Position = UDim2.new(0, 2, 0, 2)
+    switchCircle.BackgroundColor3 = Color3.fromRGB(255,255,255)
+    switchCircle.Parent = toggleSwitch
+    Instance.new("UICorner", switchCircle).CornerRadius = UDim.new(1,0)
+
+    local toggleOn = false
+    toggleSwitch.MouseButton1Click:Connect(function()
+        toggleOn = not toggleOn
+        if toggleOn then
+            TweenService:Create(toggleSwitch,TweenInfo.new(0.25),{BackgroundColor3=Color3.fromRGB(255,0,0)}):Play()
+            TweenService:Create(switchCircle,TweenInfo.new(0.25),{Position=UDim2.new(1,-15,0,2)}):Play()
+        else
+            TweenService:Create(toggleSwitch,TweenInfo.new(0.25),{BackgroundColor3=Color3.fromRGB(60,0,0)}):Play()
+            TweenService:Create(switchCircle,TweenInfo.new(0.25),{Position=UDim2.new(0,2,0,2)}):Play()
+        end
+    end)
+    createRow(homeTab, "Toggle Feature:", toggleSwitch)
+
+    -- Example Feature: Slider
+    local sliderFrame = Instance.new("Frame")
+    sliderFrame.Size = UDim2.new(0, 160, 0, 10)
+    sliderFrame.BackgroundColor3 = Color3.fromRGB(80,0,0)
+    Instance.new("UICorner", sliderFrame).CornerRadius = UDim.new(1,0)
+
+    local sliderThumb = Instance.new("Frame")
+    sliderThumb.Size = UDim2.new(0,14,0,14)
+    sliderThumb.Position = UDim2.new(0,0,-0.2,-2)
+    sliderThumb.BackgroundColor3 = Color3.fromRGB(255,255,255)
+    sliderThumb.Parent = sliderFrame
+    Instance.new("UICorner", sliderThumb).CornerRadius = UDim.new(1,0)
+
+    local sliderValueLabel = Instance.new("TextLabel")
+    sliderValueLabel.Size = UDim2.new(0,30,1,0)
+    sliderValueLabel.Position = UDim2.new(1,6,0,-2)
+    sliderValueLabel.BackgroundTransparency = 1
+    sliderValueLabel.Text = "0"
+    sliderValueLabel.Font = Enum.Font.GothamBold
+    sliderValueLabel.TextColor3 = Color3.fromRGB(255,255,255)
+    sliderValueLabel.TextSize = 12
+    sliderValueLabel.Parent = sliderFrame
+
+    local sliderValue = 0
+    local draggingSlider = false
+    local function updateSlider(inputX)
+        local relativeX = math.clamp((inputX - sliderFrame.AbsolutePosition.X)/sliderFrame.AbsoluteSize.X,0,1)
+        sliderThumb.Position = UDim2.new(relativeX,-7,-0.2,-2)
+        sliderValue = math.floor(relativeX*100)
+        sliderValueLabel.Text = tostring(sliderValue)
+    end
+    sliderThumb.InputBegan:Connect(function(input)
+        if input.UserInputType==Enum.UserInputType.MouseButton1 or input.UserInputType==Enum.UserInputType.Touch then
+            draggingSlider = true
+        end
+    end)
+    sliderThumb.InputEnded:Connect(function(input)
+        if input.UserInputType==Enum.UserInputType.MouseButton1 or input.UserInputType==Enum.UserInputType.Touch then
+            draggingSlider = false
+        end
+    end)
+    UserInputService.InputChanged:Connect(function(input)
+        if draggingSlider and (input.UserInputType==Enum.UserInputType.MouseMovement or input.UserInputType==Enum.UserInputType.Touch) then
+            updateSlider(input.Position.X)
+        end
+    end)
+    sliderFrame.InputBegan:Connect(function(input)
+        if input.UserInputType==Enum.UserInputType.MouseButton1 or input.UserInputType==Enum.UserInputType.Touch then
+            updateSlider(input.Position.X)
+            draggingSlider = true
+        end
+    end)
+    sliderFrame.InputEnded:Connect(function(input)
+        if input.UserInputType==Enum.UserInputType.MouseButton1 or input.UserInputType==Enum.UserInputType.Touch then
+            draggingSlider = false
+        end
+    end)
+    createRow(homeTab, "Main Slider:", sliderFrame)
+
+    -- Example Feature: Dropdown
+    local dropdownFrame = Instance.new("Frame")
+    dropdownFrame.Size = UDim2.new(0, 120, 0, 24)
+    dropdownFrame.BackgroundColor3 = Color3.fromRGB(50,0,0)
+
+    local dropdownLabel = Instance.new("TextLabel")
+    dropdownLabel.Size = UDim2.new(1, -20, 1, 0)
+    dropdownLabel.BackgroundTransparency = 1
+    dropdownLabel.Text = "Select..."
+    dropdownLabel.Font = Enum.Font.Gotham
+    dropdownLabel.TextSize = 12
+    dropdownLabel.TextColor3 = Color3.fromRGB(255,255,255)
+    dropdownLabel.TextXAlignment = Enum.TextXAlignment.Left
+    dropdownLabel.Parent = dropdownFrame
+
+    local dropdownButton = Instance.new("TextButton")
+    dropdownButton.Size = UDim2.new(1,0,1,0)
+    dropdownButton.BackgroundTransparency = 1
+    dropdownButton.Text = ""
+    dropdownButton.Parent = dropdownFrame
+
+    local dropdownList = Instance.new("Frame")
+    dropdownList.Size = UDim2.new(1,0,0,0)
+    dropdownList.Position = UDim2.new(0,0,1,0)
+    dropdownList.BackgroundColor3 = Color3.fromRGB(40,0,0)
+    dropdownList.ClipsDescendants = true
+    dropdownList.Parent = dropdownFrame
+
+    local options = {"Option 1","Option 2","Option 3"}
+    local expanded = false
+    local listLayout = Instance.new("UIListLayout", dropdownList)
+    listLayout.SortOrder = Enum.SortOrder.LayoutOrder
+
+    for _,opt in ipairs(options) do
+        local optBtn = Instance.new("TextButton")
+        optBtn.Size = UDim2.new(1,0,0,20)
+        optBtn.BackgroundColor3 = Color3.fromRGB(60,0,0)
+        optBtn.Text = opt
+        optBtn.Font = Enum.Font.Gotham
+        optBtn.TextSize = 12
+        optBtn.TextColor3 = Color3.fromRGB(255,255,255)
+        optBtn.Parent = dropdownList
+        optBtn.MouseButton1Click:Connect(function()
+            dropdownLabel.Text = opt
+            expanded = false
+            TweenService:Create(dropdownList,TweenInfo.new(0.25),{Size=UDim2.new(1,0,0,0)}):Play()
+        end)
+    end
+
+    dropdownButton.MouseButton1Click:Connect(function()
+        expanded = not expanded
+        local newHeight = expanded and (#options * 22) or 0
+        TweenService:Create(dropdownList,TweenInfo.new(0.25),{Size=UDim2.new(1,0,0,newHeight)}):Play()
+    end)
+    createRow(homeTab, "Dropdown:", dropdownFrame)
+
+    -- Example Feature: Textbox
+    local textBox = Instance.new("TextBox")
+    textBox.Size = UDim2.new(0,120,0,24)
+    textBox.BackgroundColor3 = Color3.fromRGB(40,40,40)
+    textBox.PlaceholderText = "Type here..."
+    textBox.TextColor3 = Color3.fromRGB(255,255,255)
+    textBox.Font = Enum.Font.Gotham
+    textBox.TextSize = 12
+    createRow(homeTab, "Textbox:", textBox)
+
+    -- Example Feature: Action Button
+    local actionButton = Instance.new("TextButton")
+    actionButton.Size = UDim2.new(0,80,0,24)
+    actionButton.BackgroundColor3 = Color3.fromRGB(0,100,0)
+    actionButton.Text = "Submit"
+    actionButton.TextColor3 = Color3.fromRGB(255,255,255)
+    actionButton.Font = Enum.Font.GothamBold
+    actionButton.TextSize = 12
+    actionButton.MouseButton1Click:Connect(function()
+        print("Dropdown:", dropdownLabel.Text)
+        print("Textbox:", textBox.Text)
+        print("Slider:", sliderValue)
+        print("Toggle:", toggleOn)
+    end)
+    createRow(homeTab, "Action Button:", actionButton)
+
+    -- Show/Hide Logic
+    local uiVisible = true
+    showHideBtn.MouseButton1Click:Connect(function()
+        uiVisible = not uiVisible
+        mainFrame.Visible = uiVisible
+        showHideBtn.Image = uiVisible and hideIcon or showIcon
+    end)
+
+    -- Return API table
+    return {
+        createTab = createTab,
+        createSidebarButton = createSidebarButton,
+        createSection = createSection,
+        createRow = createRow,
+        mainFrame = mainFrame,
+        screenGui = screenGui,
+        tabFrames = tabFrames,
+        sidebarButtons = sidebarButtons,
+    }
+end
