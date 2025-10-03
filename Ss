@@ -1,4 +1,4 @@
--- DarkMirror Classic UI Library (Full)
+-- DarkMirror Classic UI Library (Full with Global Callback Support)
 -- Usage:
 -- local DM = loadstring(game:HttpGet("YOUR_RAW_URL_HERE"))()
 -- local win = DM:CreateWindow("DarkMirrorClassicUI", "ClassicBruh")
@@ -9,9 +9,16 @@
 -- home:CreateDropdown("Dropdown", {"Option 1","Option 2"}, function(opt) print("Drop", opt) end)
 -- home:CreateTextbox("Textbox", "Type here...", function(txt) print("Text", txt) end)
 -- home:CreateButton("Submit", function() print("Submit pressed") end)
+-- DM:SetCallback(function(elementType, name, value) print("Global", elementType, name, value) end)
 
 local Library = {}
 Library.__index = Library
+
+-- Global callback
+local globalCallback = nil
+function Library:SetCallback(func)
+    globalCallback = func
+end
 
 -- Services
 local Players = game:GetService("Players")
@@ -95,14 +102,11 @@ local function createUIStroke(instance, color, thickness)
 end
 
 -- Library constructor: CreateWindow
--- returns Window object with methods: CreateTab(...)
 function Library:CreateWindow(guiName, sidebarTitle)
     local Window = {}
     Window.__index = Window
 
-    -- ScreenGui for this window (so multiple windows could exist if desired)
-    local screenGui = baseScreenGui -- reuse single ScreenGui to avoid clutter
-    -- create mainFrame
+    local screenGui = baseScreenGui
     local mainFrame = Instance.new("Frame")
     mainFrame.Size = UDim2.new(0, 480, 0, 320)
     mainFrame.Position = UDim2.new(0.5, -240, 0.5, -160)
@@ -111,9 +115,8 @@ function Library:CreateWindow(guiName, sidebarTitle)
     mainFrame.Parent = screenGui
     mainFrame.Name = guiName or "DarkMirrorClassicUI"
 
-    local mainUIStroke = createUIStroke(mainFrame, Color3.fromRGB(255, 0, 0), 3)
+    createUIStroke(mainFrame, Color3.fromRGB(255, 0, 0), 3)
 
-    -- Sidebar (scrolling frame, draggable area)
     local sidebar = Instance.new("ScrollingFrame")
     sidebar.Size = UDim2.new(0, 154, 1, 0)
     sidebar.CanvasSize = UDim2.new(0,0,0,0)
@@ -128,7 +131,7 @@ function Library:CreateWindow(guiName, sidebarTitle)
     sidebarList.SortOrder = Enum.SortOrder.LayoutOrder
     sidebarList.Padding = UDim.new(0, 8)
 
-    -- Make main UI draggable only by sidebar
+    -- Drag main UI
     do
         local dragging, dragInput, dragStart, startPos
         local function updateDrag(input)
@@ -162,7 +165,6 @@ function Library:CreateWindow(guiName, sidebarTitle)
         end)
     end
 
-    -- Sidebar Title
     local sidebarTitleLabel = Instance.new("TextLabel")
     sidebarTitleLabel.Size = UDim2.new(1, -24, 0, 38)
     sidebarTitleLabel.Position = UDim2.new(0, 12, 0, 8)
@@ -174,7 +176,6 @@ function Library:CreateWindow(guiName, sidebarTitle)
     sidebarTitleLabel.TextXAlignment = Enum.TextXAlignment.Left
     sidebarTitleLabel.Parent = sidebar
 
-    -- Content Frame (tabs holder)
     local content = Instance.new("Frame")
     content.Size = UDim2.new(1, -166, 1, -20)
     content.Position = UDim2.new(0, 154, 0, 10)
@@ -182,21 +183,18 @@ function Library:CreateWindow(guiName, sidebarTitle)
     content.BackgroundTransparency = 0.35
     content.Parent = mainFrame
 
-    -- Internal storage
     local tabFrames = {}
     local sidebarButtons = {}
 
-    -- show/hide logic for this window using global showHideBtn
+    -- show/hide toggle
     local uiVisible = true
-    local showIcon = defaultShowIcon
-    local hideIcon = defaultHideIcon
     showHideBtn.MouseButton1Click:Connect(function()
         uiVisible = not uiVisible
         mainFrame.Visible = uiVisible
-        showHideBtn.Image = uiVisible and hideIcon or showIcon
+        showHideBtn.Image = uiVisible and defaultHideIcon or defaultShowIcon
     end)
 
-    -- CreateTab function - returns a Tab object with element creation methods
+    -- CreateTab
     function Window:CreateTab(name)
         local tabFrame = Instance.new("ScrollingFrame")
         tabFrame.Size = UDim2.new(1, 0, 1, 0)
@@ -215,7 +213,6 @@ function Library:CreateWindow(guiName, sidebarTitle)
 
         tabFrames[name] = tabFrame
 
-        -- create sidebar button
         local btn = Instance.new("TextButton")
         btn.Size = UDim2.new(1, -12, 0, 36)
         btn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
@@ -239,11 +236,9 @@ function Library:CreateWindow(guiName, sidebarTitle)
             btn.BackgroundColor3 = Color3.fromRGB(60, 0, 0)
         end
 
-        -- Tab object that will expose methods
         local Tab = {}
         Tab.__index = Tab
 
-        -- Helper: create a row frame with label and destination element. This reproduces your createRow behavior.
         local function createRow(parent, labelText, element)
             local row = Instance.new("Frame")
             row.Size = UDim2.new(0.9, 0, 0, 40)
@@ -261,10 +256,7 @@ function Library:CreateWindow(guiName, sidebarTitle)
             label.Parent = row
 
             element.Parent = row
-            -- position element to the right side (mimic previous offset logic)
-            local elWidth = 0
-            local elHeight = 0
-            -- try to read Size components safely
+            local elWidth, elHeight = 0, 0
             if element.Size and element.Size.X and element.Size.Y then
                 if element.Size.X.Offset then elWidth = element.Size.X.Offset end
                 if element.Size.Y.Offset then elHeight = element.Size.Y.Offset end
@@ -272,7 +264,6 @@ function Library:CreateWindow(guiName, sidebarTitle)
             element.Position = UDim2.new(1, -elWidth, 0.5, -elHeight/2)
         end
 
-        -- Section heading (like createSection)
         function Tab:CreateSection(sectionTitle)
             local sectionLabel = Instance.new("TextLabel")
             sectionLabel.Size = UDim2.new(0.9, 0, 0, 32)
@@ -289,14 +280,12 @@ function Library:CreateWindow(guiName, sidebarTitle)
         -- Toggle
         function Tab:CreateToggle(name, callback)
             callback = callback or function() end
-
             local toggleSwitch = Instance.new("TextButton")
             toggleSwitch.Size = UDim2.new(0, 40, 0, 18)
             toggleSwitch.BackgroundColor3 = Color3.fromRGB(60,0,0)
             toggleSwitch.Text = ""
             toggleSwitch.AutoButtonColor = false
             createUICorner(toggleSwitch, UDim.new(1,0))
-            -- create circle inside
             local switchCircle = Instance.new("Frame")
             switchCircle.Size = UDim2.new(0, 13, 1, -4)
             switchCircle.Position = UDim2.new(0, 2, 0, 2)
@@ -315,15 +304,13 @@ function Library:CreateWindow(guiName, sidebarTitle)
                     TweenService:Create(switchCircle,TweenInfo.new(0.25),{Position=UDim2.new(0,2,0,2)}):Play()
                 end
                 pcall(callback, toggleOn)
+                if globalCallback then pcall(globalCallback, "Toggle", name, toggleOn) end
             end)
-
-            -- attach to a row
             createRow(tabFrame, name..":", toggleSwitch)
             return toggleSwitch
         end
 
         -- Slider
-        -- signature: name, min, max, default(optional), callback
         function Tab:CreateSlider(name, min, max, default, callback)
             if type(default) == "function" and callback == nil then
                 callback = default
@@ -358,9 +345,7 @@ function Library:CreateWindow(guiName, sidebarTitle)
 
             local sliderValue = default
             local draggingSlider = false
-
             local function updateSlider(inputX)
-                -- recompute relative position based on sliderFrame absolute position/size
                 local absPosX = sliderFrame.AbsolutePosition.X
                 local absSizeX = sliderFrame.AbsoluteSize.X
                 local relativeX = 0
@@ -371,8 +356,8 @@ function Library:CreateWindow(guiName, sidebarTitle)
                 sliderValue = math.floor(min + (max - min) * relativeX)
                 sliderValueLabel.Text = tostring(sliderValue)
                 pcall(callback, sliderValue)
+                if globalCallback then pcall(globalCallback, "Slider", name, sliderValue) end
             end
-
             sliderThumb.InputBegan:Connect(function(input)
                 if input.UserInputType==Enum.UserInputType.MouseButton1 or input.UserInputType==Enum.UserInputType.Touch then
                     draggingSlider = true
@@ -399,143 +384,124 @@ function Library:CreateWindow(guiName, sidebarTitle)
                     draggingSlider = false
                 end
             end)
-
-            -- initialize thumb position after frame is parented and AbsoluteSize becomes valid
             sliderFrame:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()
-                -- set to default
                 local rel = 0
-                if max ~= min then
-                    rel = (default - min) / (max - min)
-                end
+                if max ~= min then rel = (default - min) / (max - min) end
                 sliderThumb.Position = UDim2.new(math.clamp(rel,0,1), -7, -0.2, -2)
                 sliderValueLabel.Text = tostring(default)
             end)
-
             createRow(tabFrame, name..":", sliderFrame)
             return sliderFrame
         end
 
         -- Dropdown
-        -- signature: name, options (table), callback
         function Tab:CreateDropdown(name, options, callback)
             options = options or {}
             callback = callback or function() end
 
             local dropdownFrame = Instance.new("Frame")
             dropdownFrame.Size = UDim2.new(0, 120, 0, 24)
-            dropdownFrame.BackgroundColor3 = Color3.fromRGB(50,0,0)
-            dropdownFrame.Name = name.."Dropdown"
+            dropdownFrame.BackgroundColor3 = Color3.fromRGB(30,30,30)
+            createUICorner(dropdownFrame, UDim.new(0,6))
 
             local dropdownLabel = Instance.new("TextLabel")
-            dropdownLabel.Size = UDim2.new(1, -20, 1, 0)
+            dropdownLabel.Size = UDim2.new(1,0,1,0)
             dropdownLabel.BackgroundTransparency = 1
             dropdownLabel.Text = "Select..."
-            dropdownLabel.Font = Enum.Font.Gotham
-            dropdownLabel.TextSize = 12
+            dropdownLabel.Font = Enum.Font.GothamMedium
+            dropdownLabel.TextSize = 14
             dropdownLabel.TextColor3 = Color3.fromRGB(255,255,255)
-            dropdownLabel.TextXAlignment = Enum.TextXAlignment.Left
             dropdownLabel.Parent = dropdownFrame
 
-            local dropdownButton = Instance.new("TextButton")
-            dropdownButton.Size = UDim2.new(1,0,1,0)
-            dropdownButton.BackgroundTransparency = 1
-            dropdownButton.Text = ""
-            dropdownButton.Parent = dropdownFrame
+            local dropdownBtn = Instance.new("TextButton")
+            dropdownBtn.Size = UDim2.new(1,0,1,0)
+            dropdownBtn.BackgroundTransparency = 1
+            dropdownBtn.Text = ""
+            dropdownBtn.Parent = dropdownFrame
 
-            local dropdownList = Instance.new("Frame")
-            dropdownList.Size = UDim2.new(1,0,0,0)
-            dropdownList.Position = UDim2.new(0,0,1,0)
-            dropdownList.BackgroundColor3 = Color3.fromRGB(40,0,0)
-            dropdownList.ClipsDescendants = true
-            dropdownList.Parent = dropdownFrame
+            local dropdownListFrame = Instance.new("Frame")
+            dropdownListFrame.Size = UDim2.new(1,0,0,#options*24)
+            dropdownListFrame.Position = UDim2.new(0,0,1,2)
+            dropdownListFrame.BackgroundColor3 = Color3.fromRGB(20,20,20)
+            dropdownListFrame.Visible = false
+            dropdownListFrame.Parent = dropdownFrame
+            createUIStroke(dropdownListFrame, Color3.fromRGB(255,0,0),1)
 
-            local listLayout = Instance.new("UIListLayout", dropdownList)
+            local listLayout = Instance.new("UIListLayout", dropdownListFrame)
             listLayout.SortOrder = Enum.SortOrder.LayoutOrder
 
-            local expanded = false
-
-            -- populate options
             for _, opt in ipairs(options) do
                 local optBtn = Instance.new("TextButton")
-                optBtn.Size = UDim2.new(1,0,0,20)
-                optBtn.BackgroundColor3 = Color3.fromRGB(60,0,0)
+                optBtn.Size = UDim2.new(1,0,0,24)
+                optBtn.BackgroundColor3 = Color3.fromRGB(40,40,40)
                 optBtn.Text = opt
-                optBtn.Font = Enum.Font.Gotham
-                optBtn.TextSize = 12
+                optBtn.Font = Enum.Font.GothamMedium
                 optBtn.TextColor3 = Color3.fromRGB(255,255,255)
-                optBtn.Parent = dropdownList
-
+                optBtn.TextSize = 14
+                optBtn.Parent = dropdownListFrame
                 optBtn.MouseButton1Click:Connect(function()
                     dropdownLabel.Text = opt
-                    expanded = false
-                    TweenService:Create(dropdownList, TweenInfo.new(0.25), {Size = UDim2.new(1,0,0,0)}):Play()
+                    dropdownListFrame.Visible = false
                     pcall(callback, opt)
+                    if globalCallback then pcall(globalCallback, "Dropdown", name, opt) end
                 end)
             end
-
-            dropdownButton.MouseButton1Click:Connect(function()
-                expanded = not expanded
-                local newHeight = expanded and (#options * 22) or 0
-                TweenService:Create(dropdownList, TweenInfo.new(0.25), {Size = UDim2.new(1,0,0,newHeight)}):Play()
+            dropdownBtn.MouseButton1Click:Connect(function()
+                dropdownListFrame.Visible = not dropdownListFrame.Visible
             end)
-
             createRow(tabFrame, name..":", dropdownFrame)
             return dropdownFrame
         end
 
         -- Textbox
-        -- signature: name, placeholder (string), callback
         function Tab:CreateTextbox(name, placeholder, callback)
-            placeholder = placeholder or ""
             callback = callback or function() end
+            placeholder = placeholder or ""
 
             local tb = Instance.new("TextBox")
-            tb.Size = UDim2.new(0,120,0,24)
-            tb.BackgroundColor3 = Color3.fromRGB(40,40,40)
+            tb.Size = UDim2.new(0,160,0,24)
+            tb.BackgroundColor3 = Color3.fromRGB(30,30,30)
+            tb.Text = ""
             tb.PlaceholderText = placeholder
-            tb.TextColor3 = Color3.fromRGB(255,255,255)
             tb.Font = Enum.Font.Gotham
-            tb.TextSize = 12
-            createUICorner(tb, UDim.new(0, 4))
+            tb.TextSize = 14
+            tb.TextColor3 = Color3.fromRGB(255,255,255)
+            createUICorner(tb, UDim.new(0,6))
 
-            -- call callback when user presses enter (FocusLost with enter boolean)
             tb.FocusLost:Connect(function(enterPressed)
                 if enterPressed then
                     pcall(callback, tb.Text)
+                    if globalCallback then pcall(globalCallback, "Textbox", name, tb.Text) end
                 end
             end)
-
             createRow(tabFrame, name..":", tb)
             return tb
         end
 
-        -- Generic Button
+        -- Button
         function Tab:CreateButton(name, callback)
             callback = callback or function() end
-
             local btn = Instance.new("TextButton")
-            btn.Size = UDim2.new(0,80,0,24)
-            btn.BackgroundColor3 = Color3.fromRGB(0,100,0)
+            btn.Size = UDim2.new(0,120,0,28)
+            btn.BackgroundColor3 = Color3.fromRGB(60,0,0)
             btn.Text = name
-            btn.TextColor3 = Color3.fromRGB(255,255,255)
             btn.Font = Enum.Font.GothamBold
-            btn.TextSize = 12
-            createUICorner(btn, UDim.new(0, 4))
+            btn.TextSize = 14
+            btn.TextColor3 = Color3.fromRGB(255,255,255)
+            createUICorner(btn, UDim.new(0,6))
 
             btn.MouseButton1Click:Connect(function()
                 pcall(callback)
+                if globalCallback then pcall(globalCallback, "Button", name, true) end
             end)
-
-            createRow(tabFrame, "", btn) -- empty label to align like your original createRow usage
+            createRow(tabFrame, name..":", btn)
             return btn
         end
 
-        -- Expose Tab to caller
-        return setmetatable(Tab, Tab)
+        return Tab
     end
 
-    -- Return window object with CreateTab method
-    return setmetatable({ CreateTab = Window.CreateTab }, Window)
+    return Window
 end
 
 return Library
