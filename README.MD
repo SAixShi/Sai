@@ -1,82 +1,154 @@
-# DarkMirrorClassicUI Library Documentation
-
-A modern Roblox UI library designed for plug-and-play usage in your games.  
-Provides: draggable main UI, sidebar tab navigation, section headings, rows, toggles, sliders, dropdowns, textboxes, buttons, and show/hide toggle.
-
----
-
-## Features
-- **Draggable UI:** Both the main frame and the show/hide button can be dragged.
-- **Sidebar Tabs:** Easily create and switch between multiple tabs.
-- **Section Headings:** Use section headings to organize UI content with custom text size.
-- **Rows:** Add labeled rows with any Roblox UI element.
-- **Show/Hide Button:** Toggle visibility of the UI for convenience.
-
----
-
-## Loader Usage
-
-To use this library via a loader:
-
-```lua
-local Synix = loadstring(game:HttpGet("URL_TO_RAW_SCRIPT"))()
-```
-
-This loads and initializes the UI, returning an API table for further usage.
-
----
-
-## API Reference
-
-### `Synix.createTab(name: string): ScrollingFrame`
-Creates a new tab (ScrollingFrame) with the given name and returns the frame for further customization.
-
-### `Synix.createSidebarButton(text: string, tabName: string)`
-Creates a sidebar button labeled `text` that, when clicked, shows the tab named `tabName`.
-
-### `Synix.createSection(tab: Instance, sectionTitle: string)`
-Adds a section heading (TextLabel) with text size 20 and custom color to the specified tab.
-
-### `Synix.createRow(tab: Instance, label: string, element: Instance)`
-Adds a row to the specified tab, consisting of a label and an element (e.g., button, slider, etc.).
-
-### Properties
-
-- `Synix.mainFrame` — The main UI frame, for parenting or styling.
-- `Synix.screenGui` — The parent ScreenGui.
-- `Synix.tabFrames` — Table of tab frames for direct access.
-- `Synix.sidebarButtons` — Table of sidebar buttons for direct access.
-
----
-
-## Example
-
-```lua
-local Synix = loadstring(game:HttpGet("URL_TO_RAW_SCRIPT"))()
-local myTab = Synix.createTab("MyTab")
-Synix.createSidebarButton("My Tab", "MyTab")
-Synix.createSection(myTab, "Custom Section")
-local myButton = Instance.new("TextButton")
-myButton.Size = UDim2.new(0, 100, 0, 32)
-myButton.Text = "Click Me!"
-Synix.createRow(myTab, "Button Row:", myButton)
-```
-
----
-
-## Customization
-
-- All UI elements are created with Roblox Instances, so you can further style, modify, or extend as needed.
-- Add more tabs, sections, rows, or custom UI elements using the API.
-- The library does not restrict your UI style — feel free to change colors, fonts, sizes, etc.
-
----
-
-## License
-
-MIT License
-
----
-
-**Author:** SAixShi  
-**Version:** 1.0.0
+local key = loadstring(game:HttpGet("https://raw.githubusercontent.com/SAixShi/Shipaid/refs/heads/main/Whitelist",true))() -- put youre key in here
+ 
+local keylink = "Kupal.Bingot Ka" -- put your key link here
+ 
+local nameofthescript = "IShi Key" --put your script name here. leave blank too leave blank ig
+ 
+local whoisitmadeby = "SAILYN" -- put your name here
+ 
+local thenoteofthekey = "PUTANG INA NIYO MGA BINGOT, CTX, ONYX!" --note you add here. leave blank to not have a note.
+ 
+-- Instances:
+ 
+local ScreenGui = Instance.new("ScreenGui")
+local KeySystem = Instance.new("Frame")
+local KeyTextbox = Instance.new("TextBox")
+local UICorner = Instance.new("UICorner")
+local UICorner_2 = Instance.new("UICorner")
+local title = Instance.new("TextLabel")
+local TextButton = Instance.new("TextButton")
+local UICorner_3 = Instance.new("UICorner")
+local scriptname = Instance.new("TextLabel")
+local madeby = Instance.new("TextLabel")
+local note = Instance.new("TextLabel")
+--Properties:
+ 
+ScreenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+ 
+KeySystem.Name = "KeySystem"
+KeySystem.Parent = ScreenGui
+KeySystem.BackgroundColor3 = Color3.fromRGB(150, 45, 200)
+KeySystem.BorderColor3 = Color3.fromRGB(50, 0, 50)
+KeySystem.BorderSizePixel = 0
+KeySystem.Position = UDim2.new(0.379651636, 0, 0.32965821, 0)
+KeySystem.Size = UDim2.new(0.240300864, 0, 0.340683579, 0)
+KeySystem.Selectable = true
+KeySystem.Active = true
+KeySystem.Draggable = true
+ 
+KeyTextbox.Name = "KeyTextbox"
+KeyTextbox.Parent = KeySystem
+KeyTextbox.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+KeyTextbox.BackgroundTransparency = 0.950
+KeyTextbox.BorderColor3 = Color3.fromRGB(0, 0, 0)
+KeyTextbox.BorderSizePixel = 0
+KeyTextbox.Position = UDim2.new(0.0939044505, 0, 0.734627843, 0)
+KeyTextbox.Size = UDim2.new(0.813838542, 0, 0.161812291, 0)
+KeyTextbox.Font = Enum.Font.Gotham
+KeyTextbox.Text = "Enter Key"
+KeyTextbox.TextColor3 = Color3.fromRGB(255, 255, 255)
+KeyTextbox.TextScaled = true
+KeyTextbox.TextSize = 14.000
+KeyTextbox.TextWrapped = true
+ 
+UICorner.CornerRadius = UDim.new(0, 15)
+UICorner.Parent = KeyTextbox
+ 
+UICorner_2.CornerRadius = UDim.new(0, 15)
+UICorner_2.Parent = KeySystem
+ 
+title.Name = "title"
+title.Parent = KeySystem
+title.BackgroundColor3 = Color3.fromRGB(255, 0, 255)
+title.BackgroundTransparency = 1.000
+title.BorderColor3 = Color3.fromRGB(0, 0, 0)
+title.BorderSizePixel = 0
+title.Position = UDim2.new(0, 0, 0.0323624611, 0)
+title.Size = UDim2.new(1, 0, 0.197411001, 0)
+title.Font = Enum.Font.Gotham
+title.Text = "KEY SYSTEM"
+title.TextColor3 = Color3.fromRGB(255, 0, 255)
+title.TextScaled = true
+title.TextSize = 14.000
+title.TextWrapped = true
+ 
+TextButton.Parent = KeySystem
+TextButton.BackgroundColor3 = Color3.fromRGB(25, 255, 25)
+TextButton.BackgroundTransparency = 0.950
+TextButton.BorderColor3 = Color3.fromRGB(0, 0, 0)
+TextButton.BorderSizePixel = 0
+TextButton.Position = UDim2.new(0.0922570005, 0, 0.504854381, 0)
+TextButton.Size = UDim2.new(0.813838542, 0, 0.161812291, 0)
+TextButton.Font = Enum.Font.Gotham
+TextButton.Text = "Check Key"
+TextButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+TextButton.TextScaled = true
+TextButton.TextSize = 14.000
+TextButton.TextWrapped = true
+TextButton.MouseButton1Click:Connect(function()
+	if KeyTextbox.Text == key then
+		TextButton.Text = "PALO Correct Key!"
+		task.wait(1)
+		loadstring(game:HttpGet("https://raw.githubusercontent.com/SAixShi/SailynxShi/refs/heads/main/UILib",true))() -- insert script on this line
+		ScreenGui:Destroy()
+	else
+		TextButton.Text = "TANGINA MO Wrong Key!"
+		task.wait(2)
+		TextButton.Text = "Check Key"
+	end
+end)
+ 
+UICorner_3.CornerRadius = UDim.new(0, 15)
+UICorner_3.Parent = TextButton
+ 
+scriptname.Name = "scriptname"
+scriptname.Parent = KeySystem
+scriptname.BackgroundColor3 = Color3.fromRGB(255, 0, 255)
+scriptname.BackgroundTransparency = 1.000
+scriptname.BorderColor3 = Color3.fromRGB(0, 0, 0)
+scriptname.BorderSizePixel = 0
+scriptname.Position = UDim2.new(0, 0, 0.262135923, 0)
+scriptname.Size = UDim2.new(1, 0, 0.0809061453, 0)
+scriptname.Font = Enum.Font.Gotham
+scriptname.Text = nameofthescript
+scriptname.TextColor3 = Color3.fromRGB(25, 255, 25)
+scriptname.TextScaled = true
+scriptname.TextSize = 14.000
+scriptname.TextWrapped = true
+ 
+madeby.Name = "madeby"
+madeby.Parent = KeySystem
+madeby.BackgroundColor3 = Color3.fromRGB(255, 0, 255)
+madeby.BackgroundTransparency = 1.000
+madeby.BorderColor3 = Color3.fromRGB(0, 0, 0)
+madeby.BorderSizePixel = 0
+madeby.Position = UDim2.new(0, 0, 0.368932039, 0)
+madeby.Size = UDim2.new(1, 0, 0.0809061453, 0)
+madeby.Font = Enum.Font.Gotham
+madeby.Text = "Made by: " .. whoisitmadeby
+madeby.TextColor3 = Color3.fromRGB(25, 255, 25)
+madeby.TextScaled = true
+madeby.TextSize = 14.000
+madeby.TextWrapped = true
+madeby.Visible = true
+ 
+note.Name = "note"
+note.Parent = KeySystem
+note.BackgroundColor3 = Color3.fromRGB(255, 0, 255)
+note.BackgroundTransparency = 1.000
+note.BorderColor3 = Color3.fromRGB(0, 0, 0)
+note.BorderSizePixel = 0
+note.Position = UDim2.new(0, 0, 0.919093847, 0)
+note.Size = UDim2.new(1, 0, 0.0809061453, 0)
+note.Font = Enum.Font.Gotham
+note.Text = thenoteofthekey
+note.TextColor3 = Color3.fromRGB(25, 255, 25)
+note.TextScaled = true
+note.TextSize = 14.000
+note.TextWrapped = true
+ 
+scriptname.Text = "Key Link Copied!"
+setclipboard(keylink)
+task.wait(3)
+scriptname.Text = nameofthescript
